@@ -11,6 +11,12 @@ data:
   redis-config: |
     maxmemory 2mb
     maxmemory-policy allkeys-lru
+
+    save 300 10
+    #dbfilename dump.rdb
+    appendonly yes
+    #appendfsync always
+    #appendfilename "appendonly.aof"
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
