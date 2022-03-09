@@ -51,9 +51,14 @@ spec:
         command:
           - redis-server
           - "/redis-master/redis.conf"
+        args:
+          - --requirepass
+          - $(DATABASE_PASSWORD)
         env:
         - name: MASTER
           value: "true"
+        - name: DATABASE_PASSWORD
+          value: "p4ssw0rd"
         ports:
         - containerPort: 6379
         resources:
