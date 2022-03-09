@@ -1,0 +1,74 @@
+# source:
+# https://kubernetes.io/docs/tutorials/configuration/configure-redis-using-configmap/
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: example-redis-config
+data:
+  # see also https://redis.io/topics/persistence
+  # do not use comments in lines in this config map 
+  redis-config: |
+    maxmemory 2mb
+    maxmemory-policy allkeys-lru
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-data-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      # taken from
+      # https://kubernetes.io/docs/tutorials/configuration/configure-redis-using-configmap/
+      containers:
+      - name: redis
+        image: redis
+        command:
+          - redis-server
+          - "/redis-master/redis.conf"
+        env:
+        - name: MASTER
+          value: "true"
+        ports:
+        - containerPort: 6379
+        resources:
+          limits:
+            cpu: "0.1"
+        volumeMounts:
+        - mountPath: /redis-master-data
+          name: master-data-storage
+        - mountPath: /redis-master
+          name: config-storage
+        - mountPath: /data
+          name: redis-data-storage
+      volumes:
+        - name: master-data-storage
+          emptyDir: {}
+        - name: config-storage
+          configMap:
+            name: example-redis-config
+            items:
+            - key: redis-config
+              path: redis.conf
+        - name: redis-data-storage
+          persistentVolumeClaim:
+                claimName: redis-data-pvc
